@@ -5,7 +5,7 @@ Usage:
     echo '<content>' | python3 index.py <library> --file <path> [--url <url>] [--title <title>]
     python3 index.py <library> --file <path> --content "<content>" [--url <url>] [--title <title>]
 
-Batch mode with progress bar:
+Batch mode:
     find docs -name "*.md" | python3 index.py <library> --batch --base-url "https://example.com/docs"
 """
 from __future__ import annotations
@@ -117,35 +117,18 @@ def chunk_document(content: str, path: str, base_url: str = None) -> list[dict]:
     return chunks
 
 
-def print_progress(current: int, total: int, width: int = 40, interval: int = 1):
-    """Print a horizontal progress bar at specified intervals."""
-    if current != total and current % interval != 0:
-        return
-    percent = current / total if total > 0 else 1
-    filled = int(width * percent)
-    bar = '█' * filled + '░' * (width - filled)
-    sys.stderr.write(f'[{bar}] {current}/{total}\n')
-    sys.stderr.flush()
-
-
 def batch_index(library: str, base_url: str, strip_prefix: str = '', chunk: bool = True):
-    """Index multiple files from stdin with progress bar."""
-    # Read all file paths first to get total count
+    """Index multiple files from stdin."""
     files = [line.strip() for line in sys.stdin if line.strip()]
     total = len(files)
 
     if total == 0:
-        print("No files to index.", file=sys.stderr)
         return
-
-    # Calculate progress interval: ~5 updates for small sets, every 200 for large
-    interval = 200 if total >= 1000 else max(1, total // 5)
 
     conn = get_connection()
     library_id = get_or_create_library(conn, library)
-    doc_count = 0
 
-    for i, filepath in enumerate(files, 1):
+    for filepath in files:
         try:
             with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
                 content = f.read()
@@ -183,15 +166,11 @@ def batch_index(library: str, base_url: str, strip_prefix: str = '', chunk: bool
                     title=doc['title'],
                     url=doc['url']
                 )
-                doc_count += 1
 
-        except Exception as e:
-            sys.stderr.write(f'Error indexing {filepath}: {e}\n')
-
-        print_progress(i, total, interval=interval)
+        except Exception:
+            pass  # Silent errors
 
     conn.close()
-    sys.stderr.write(f'Done! Indexed {doc_count} docs ({total} files) into "{library}"\n')
 
 
 def main():
