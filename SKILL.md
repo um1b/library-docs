@@ -11,19 +11,19 @@ user-invocable: true
 
 ```bash
 # List
-python3 ./list.py                         # all libraries
-python3 ./list.py <library>               # docs in a library
-python3 ./list.py --delete <library>      # delete a library
+python3 ./scripts/list.py                         # all libraries
+python3 ./scripts/list.py <library>               # docs in a library
+python3 ./scripts/list.py --delete <library>      # delete a library
 
 # Search
-python3 ./search.py "<query>"                       # all libraries
-python3 ./search.py "<query>" --library <library>   # specific library
-python3 ./search.py "<query>" --limit <n>           # limit results
+python3 ./scripts/search.py "<query>"                       # all libraries
+python3 ./scripts/search.py "<query>" --library <library>   # specific library
+python3 ./scripts/search.py "<query>" --limit <n>           # limit results
 
 # Read
-python3 ./read.py <library> "<title>"               # by title (exact)
-python3 ./read.py <library> <id>                    # by document ID
-python3 ./read.py <library> "<title>" --lines 1-100 # specific lines
+python3 ./scripts/read.py <library> "<title>"               # by title (exact)
+python3 ./scripts/read.py <library> <id>                    # by document ID
+python3 ./scripts/read.py <library> "<title>" --lines 1-100 # specific lines
 
 # All commands support --json
 ```
@@ -32,15 +32,15 @@ python3 ./read.py <library> "<title>" --lines 1-100 # specific lines
 
 ```bash
 # 1. Search
-python3 ./search.py "<query>" --library <library>
+python3 ./scripts/search.py "<query>" --library <library>
 
 # 2. Read (use title or ID from search results)
-python3 ./read.py <library> "<title>"
-python3 ./read.py <library> <id>
+python3 ./scripts/read.py <library> "<title>"
+python3 ./scripts/read.py <library> <id>
 
 # 3. For long docs, read in chunks
-python3 ./read.py <library> "<title>" --lines 1-100
-python3 ./read.py <library> "<title>" --lines 100-200
+python3 ./scripts/read.py <library> "<title>" --lines 1-100
+python3 ./scripts/read.py <library> "<title>" --lines 100-200
 ```
 
 ## Indexing a Library
@@ -48,8 +48,8 @@ python3 ./read.py <library> "<title>" --lines 100-200
 ### Check for preset first
 
 ```bash
-python3 ./presets.py list              # List all available presets
-python3 ./presets.py show <library>    # Show preset details
+python3 ./scripts/presets.py list              # List all available presets
+python3 ./scripts/presets.py show <library>    # Show preset details
 ```
 
 If a preset exists, use it directly (see "Using Presets" below).
@@ -98,11 +98,11 @@ find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | wc -l
 
 # index
 find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | \
-  python3 ./index.py <lib> --batch --base-url "<base-url>" --strip-prefix "<docs-path>/"
+  python3 ./scripts/index.py <lib> --batch --base-url "<base-url>" --strip-prefix "<docs-path>/"
 
 # cleanup and verify
 rm -rf /tmp/<lib>-docs
-python3 ./list.py <lib>
+python3 ./scripts/list.py <lib>
 ```
 
 ## Common Patterns
@@ -114,7 +114,7 @@ cd /tmp && rm -rf <lib>-docs
 git clone --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
 cd <lib>-docs && git sparse-checkout set docs
 find docs -type f \( -name "*.md" -o -name "*.mdx" \) | \
-  python3 ./index.py <lib> --batch --base-url "<base-url>" --strip-prefix "docs/"
+  python3 ./scripts/index.py <lib> --batch --base-url "<base-url>" --strip-prefix "docs/"
 rm -rf /tmp/<lib>-docs
 ```
 
@@ -123,7 +123,7 @@ rm -rf /tmp/<lib>-docs
 ```bash
 cd /tmp && rm -rf <lib>-repo
 git clone --depth 1 <repo-url> <lib>-repo
-cat <lib>-repo/README.md | python3 ./index.py <lib> -f "README.md" -u "<repo-url>#readme"
+cat <lib>-repo/README.md | python3 ./scripts/index.py <lib> -f "README.md" -u "<repo-url>#readme"
 rm -rf /tmp/<lib>-repo
 ```
 
@@ -134,7 +134,7 @@ cd /tmp && rm -rf <lib>-docs
 git clone --branch <tag> --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
 cd <lib>-docs && git sparse-checkout set <docs-path>
 find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | \
-  python3 ./index.py <lib>-<version> --batch --base-url "<base-url>" --strip-prefix "<docs-path>/"
+  python3 ./scripts/index.py <lib>-<version> --batch --base-url "<base-url>" --strip-prefix "<docs-path>/"
 rm -rf /tmp/<lib>-docs
 ```
 
@@ -143,14 +143,14 @@ rm -rf /tmp/<lib>-docs
 For popular libraries, use the preset for correct repo/path/URL:
 
 ```bash
-python3 ./presets.py show react   # Show preset config
+python3 ./scripts/presets.py show react   # Show preset config
 
 # Then use the preset values:
 cd /tmp && rm -rf react-docs
 git clone --depth 1 --filter=blob:none --sparse https://github.com/reactjs/react.dev react-docs
 cd react-docs && git sparse-checkout set src/content
 find src/content -type f \( -name "*.md" -o -name "*.mdx" \) | \
-  python3 ./index.py react --batch --base-url "https://react.dev" --strip-prefix "src/content/"
+  python3 ./scripts/index.py react --batch --base-url "https://react.dev" --strip-prefix "src/content/"
 rm -rf /tmp/react-docs
 ```
 

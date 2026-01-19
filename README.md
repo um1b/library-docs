@@ -15,7 +15,6 @@ Index and search library documentation locally for fast, offline access in Claud
 ## Requirements
 
 - Python 3.9+
-- No external dependencies (stdlib only)
 
 ## Installation
 
@@ -46,8 +45,8 @@ Or just ask naturally: "index the React docs", "search for authentication in nex
 59 popular libraries have pre-configured repo URLs and doc paths:
 
 ```bash
-python3 presets.py list           # Show all presets
-python3 presets.py show nextjs    # Show preset details
+python3 ./scripts/presets.py list           # Show all presets
+python3 ./scripts/presets.py show nextjs    # Show preset details
 ```
 
 **Frontend**: react, nextjs, vue, svelte, nuxt, angular, astro, remix, solid
@@ -66,26 +65,28 @@ python3 presets.py show nextjs    # Show preset details
 
 | Command | Description |
 |---------|-------------|
-| `python3 list.py` | List all indexed libraries |
-| `python3 list.py <library>` | List documents in a library |
-| `python3 list.py --delete <name>` | Delete a library |
-| `python3 search.py "<query>"` | Search all libraries |
-| `python3 search.py "<query>" --library <name>` | Search specific library |
-| `python3 read.py <library> <id\|path\|title>` | Read full document |
-| `python3 presets.py list` | List all presets |
-| `python3 presets.py show <name>` | Show preset details |
+| `python3 ./scripts/list.py` | List all indexed libraries |
+| `python3 ./scripts/list.py <library>` | List documents in a library |
+| `python3 ./scripts/list.py --delete <name>` | Delete a library |
+| `python3 ./scripts/search.py "<query>"` | Search all libraries |
+| `python3 ./scripts/search.py "<query>" --library <name>` | Search specific library |
+| `python3 ./scripts/read.py <library> <id\|path\|title>` | Read full document |
+| `python3 ./scripts/presets.py list` | List all presets |
+| `python3 ./scripts/presets.py show <name>` | Show preset details |
 
 ## Architecture
 
 ```
 library-docs/
-├── db.py        # SQLite + FTS5 database layer
-├── index.py     # Batch/single file indexer (with auto-chunking)
-├── search.py    # Full-text search CLI
-├── list.py      # List libraries/documents
-├── read.py      # Read full document content
-├── presets.py   # 59 library presets (repos, paths, URLs)
-├── SKILL.md     # Claude Code skill definition
+├── scripts/
+│   ├── db.py        # SQLite + FTS5 database layer
+│   ├── index.py     # Batch/single file indexer (with auto-chunking)
+│   ├── search.py    # Full-text search CLI
+│   ├── list.py      # List libraries/documents
+│   ├── read.py      # Read full document content
+│   └── presets.py   # 59 library presets (repos, paths, URLs)
+├── SKILL.md         # Claude Code skill definition
+├── README.md
 └── data/
     └── library.db   # SQLite database (created on first use)
 ```
@@ -103,15 +104,15 @@ library-docs/
 /library-doc index bun
 
 # 2. Search for a topic
-python3 search.py "websocket" --library bun
+python3 ./scripts/search.py "websocket" --library bun
 # Returns: title, URL, snippet with highlighted matches
 
 # 3. Read the full document
-python3 read.py bun "WebSockets"
+python3 ./scripts/read.py bun "WebSockets"
 # Returns: complete markdown content
 
 # 4. Read specific lines (for long docs)
-python3 read.py bun "WebSockets" --lines 1-100
+python3 ./scripts/read.py bun "WebSockets" --lines 1-100
 ```
 
 ## CLAUDE.md Configuration
