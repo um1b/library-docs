@@ -5,7 +5,13 @@ A local documentation indexer for Claude Code that allows you to index and searc
 ## Installation
 
 ```bash
-git clone https://github.com/um1b/library-docs ~/.claude/skills/library-doc
+git clone https://github.com/um1b/library-docs.git ~/.claude/skills/library-docs
+```
+
+## Update
+
+```bash
+git -C ~/.claude/skills/library-docs pull
 ```
 
 ## Usage
