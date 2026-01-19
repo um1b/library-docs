@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""List indexed libraries.
+"""List indexed libraries or documents.
 
 Usage:
     python3 list.py [--json]
+    python3 list.py <library> [--json]
+    python3 list.py --delete <name>
 """
 import argparse
 import json
-from db import get_connection, list_libraries, delete_library
+from db import get_connection, list_libraries, list_documents, delete_library
 
 
 def main():
-    parser = argparse.ArgumentParser(description='List indexed libraries')
+    parser = argparse.ArgumentParser(description='List indexed libraries or documents')
+    parser.add_argument('library', nargs='?', help='Library name to list documents for')
     parser.add_argument('--json', '-j', action='store_true', help='Output as JSON')
     parser.add_argument('--delete', '-d', help='Delete a library by name')
 
@@ -26,6 +29,38 @@ def main():
         conn.close()
         return
 
+    # List documents for a specific library
+    if args.library:
+        docs = list_documents(conn, args.library)
+        conn.close()
+
+        if not docs:
+            if args.json:
+                print(json.dumps({"error": f"Library '{args.library}' not found or empty", "documents": []}))
+            else:
+                print(f"Library '{args.library}' not found or has no documents.")
+            return
+
+        if args.json:
+            output = {
+                "library": args.library,
+                "documents": [
+                    {"title": row["title"], "path": row["path"], "url": row["url"]}
+                    for row in docs
+                ],
+                "count": len(docs)
+            }
+            print(json.dumps(output, indent=2))
+        else:
+            print(f"Documents in '{args.library}' ({len(docs)} docs):\n")
+            for i, row in enumerate(docs, 1):
+                title = row['title'] or row['path']
+                print(f"{i:3}. {title}")
+                if row["url"]:
+                    print(f"     {row['url']}")
+        return
+
+    # List all libraries
     libraries = list_libraries(conn)
     conn.close()
 

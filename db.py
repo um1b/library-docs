@@ -1,6 +1,6 @@
 """SQLite utilities for library documentation indexer."""
+import re
 import sqlite3
-import os
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "data" / "library.db"
@@ -118,7 +118,6 @@ def build_fts_query(query: str) -> str:
     - Words ending with * are treated as prefix searches
     - Title matches are boosted with higher weight
     """
-    import re
     # Split on whitespace, filter empty
     terms = [t.strip() for t in query.split() if t.strip()]
 
@@ -189,6 +188,17 @@ def list_libraries(conn: sqlite3.Connection) -> list:
         FROM libraries
         ORDER BY name
     """).fetchall()
+
+
+def list_documents(conn: sqlite3.Connection, library_name: str) -> list:
+    """List all documents for a library."""
+    return conn.execute("""
+        SELECT d.title, d.path, d.url
+        FROM documents d
+        JOIN libraries l ON d.library_id = l.id
+        WHERE l.name = ?
+        ORDER BY d.path
+    """, (library_name,)).fetchall()
 
 
 def delete_library(conn: sqlite3.Connection, name: str) -> bool:
