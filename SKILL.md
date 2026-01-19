@@ -9,6 +9,18 @@ user-invocable: true
 
 Index library docs locally for fast, offline search.
 
+## Installation
+
+```bash
+git clone https://github.com/um1b/library-docs.git ~/.claude/skills/library-docs
+```
+
+## Update
+
+```bash
+git -C ~/.claude/skills/library-docs pull
+```
+
 ## Commands
 
 ### List indexed libraries
