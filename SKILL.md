@@ -1,69 +1,69 @@
 ---
 name: library-doc
 description: Index and search library documentation locally for offline use. Invoke when user asks to index docs, search library topics, or list indexed libraries.
-allowed-tools: WebSearch, Bash, Read
+allowed-tools: WebSearch, WebFetch, Bash, Read
 user-invocable: true
 ---
 
 # Library Documentation Indexer
 
-Index library docs locally for fast, offline search.
-
 ## Commands
 
-### List indexed libraries
-
 ```bash
-python3 ./list.py [--json]
+# List
+python3 ./list.py                         # all libraries
+python3 ./list.py <library>               # docs in a library
+python3 ./list.py --delete <library>      # delete a library
+
+# Search
+python3 ./search.py "<query>"                       # all libraries
+python3 ./search.py "<query>" --library <library>   # specific library
+python3 ./search.py "<query>" --limit <n>           # limit results
+
+# Read
+python3 ./read.py <library> "<title>"               # by title (exact)
+python3 ./read.py <library> <id>                    # by document ID
+python3 ./read.py <library> "<title>" --lines 1-100 # specific lines
+
+# All commands support --json
 ```
 
-### List documents in a library
+## Search → Read Workflow
 
 ```bash
-python3 ./list.py <library> [--json]
-```
+# 1. Search
+python3 ./search.py "<query>" --library <library>
 
-### Search docs
+# 2. Read (use title or ID from search results)
+python3 ./read.py <library> "<title>"
+python3 ./read.py <library> <id>
 
-```bash
-python3 ./search.py "<query>" [--library <name>] [--limit <n>] [--json]
-```
-
-### Delete a library
-
-```bash
-python3 ./list.py --delete <name>
-```
-
-### Examples
-
-```bash
-# List all indexed libraries
-python3 ./list.py
-
-# List all documents in a library
-python3 ./list.py nextjs
-
-# Search all indexed libraries
-python3 ./search.py "authentication"
-
-# Search specific library
-python3 ./search.py "server components" --library nextjs
-
-# Get more results as JSON
-python3 ./search.py "async await" --limit 20 --json
+# 3. For long docs, read in chunks
+python3 ./read.py <library> "<title>" --lines 1-100
+python3 ./read.py <library> "<title>" --lines 100-200
 ```
 
 ## Indexing a Library
 
-### Step 1: Clarify what to index
+### Check for preset first
 
-Ask the user if ambiguous. "index X docs" could mean:
-- A library/framework (e.g., React, FastAPI)
-- A web API or spec (e.g., WebSocket API)
+```bash
+python3 ./presets.py list              # List all available presets
+python3 ./presets.py show <library>    # Show preset details
+```
+
+If a preset exists, use it directly (see "Using Presets" below).
+
+### Manual indexing (no preset)
+
+#### Step 1: Clarify what to index
+
+If ambiguous, ask the user:
+- Library/framework (ex: React, FastAPI)
+- Web API or spec (ex: WebSocket API)
 - Different implementations across languages
 
-### Step 2: Find docs source
+#### Step 2: Find docs source
 
 Search: `"<library> documentation github"` or `"<library> docs site:github.com"`
 
@@ -72,108 +72,94 @@ Look for:
 - Dedicated docs repo (`<lib>-docs`, `<lib>.dev`)
 - README-only projects
 
-**For specific versions:** Check the repo's releases/tags page. Common tag patterns:
-- `v15.0.0`, `v15.1.0` (semantic versioning)
-- `15.x`, `v15` (major version branches)
-- `docs-v15`, `release-15.0` (alternative patterns)
+For specific versions: check releases/tags (`v15.0.0`, `15.x`, `docs-v15`)
 
 ### Step 3: Identify structure
 
-Determine:
 - **Docs path**: `docs/`, `content/`, `src/content/`, etc.
-- **File types**: `.md`, `.mdx`
-- **Base URL**: Live docs URL for linking (e.g., `https://docs.example.com`)
+- **File types**: `.md`, `.mdx`, `.rst`
+- **Base URL**: live docs URL (e.g., `https://<library>.dev/docs`)
 
 ### Step 4: Clone and index
 
-**Naming convention:**
-- `nextjs` - latest/default version
-- `nextjs-15` - specific major version
-- `python-3.12` - specific minor version (when relevant)
+Naming: `<library>` for latest, `<library>-<version>` for specific version.
 
-**IMPORTANT:** Always use `--sparse` with `git sparse-checkout set` to only download docs files (`.md`, `.mdx`), not the entire repo.
+CRITICAL: Always use sparse checkout to only download docs.
 
 ```bash
 cd /tmp && rm -rf <lib>-docs
 
-# For latest version (MUST use --sparse):
+# clone with sparse checkout
 git clone --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
-
-# For specific version (MUST use --sparse):
-git clone --branch <tag> --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
-
-# REQUIRED: Set sparse-checkout to only fetch docs folder
 cd <lib>-docs && git sparse-checkout set <docs-path>
 
-# Check if docs exist before indexing
-count=$(find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | wc -l)
-if [ "$count" -eq 0 ]; then
-  echo "Error: No docs found in <docs-path>. Check the path or file types."
-  exit 1
-fi
+# verify docs exist
+find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | wc -l
 
+# index
 find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | \
   python3 ./index.py <lib> --batch --base-url "<base-url>" --strip-prefix "<docs-path>/"
 
+# cleanup and verify
 rm -rf /tmp/<lib>-docs
-```
-
-### Step 5: Verify
-
-```bash
 python3 ./list.py <lib>
 ```
 
-If the library shows 0 docs or not found, check:
-- Docs path is correct
-- File extensions match (`.md`, `.mdx`, `.rst`)
-- Sparse checkout succeeded
+## Common Patterns
 
-## Examples
-
-### Index a library with docs folder
+### Standard docs folder
 
 ```bash
 cd /tmp && rm -rf <lib>-docs
 git clone --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
 cd <lib>-docs && git sparse-checkout set docs
-
-find docs -type f -name "*.md" | \
+find docs -type f \( -name "*.md" -o -name "*.mdx" \) | \
   python3 ./index.py <lib> --batch --base-url "<base-url>" --strip-prefix "docs/"
-
 rm -rf /tmp/<lib>-docs
-
-# Verify
-python3 ./list.py <lib>
 ```
 
-### Index a README-only project
+### README-only project
 
 ```bash
 cd /tmp && rm -rf <lib>-repo
 git clone --depth 1 <repo-url> <lib>-repo
 cat <lib>-repo/README.md | python3 ./index.py <lib> -f "README.md" -u "<repo-url>#readme"
 rm -rf /tmp/<lib>-repo
-
-# Verify
-python3 ./list.py <lib>
 ```
 
-### Index a specific version
+### Specific version
 
 ```bash
-cd /tmp && rm -rf nextjs-docs
-
-# Clone Next.js v15 docs
-git clone --branch v15.0.0 --depth 1 --filter=blob:none --sparse \
-  https://github.com/vercel/next.js.git nextjs-docs
-cd nextjs-docs && git sparse-checkout set docs
-
-find docs -type f -name "*.mdx" | \
-  python3 ./index.py nextjs-15 --batch --base-url "https://nextjs.org/docs" --strip-prefix "docs/"
-
-rm -rf /tmp/nextjs-docs
-
-# Verify
-python3 ./list.py nextjs-15
+cd /tmp && rm -rf <lib>-docs
+git clone --branch <tag> --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
+cd <lib>-docs && git sparse-checkout set <docs-path>
+find <docs-path> -type f \( -name "*.md" -o -name "*.mdx" \) | \
+  python3 ./index.py <lib>-<version> --batch --base-url "<base-url>" --strip-prefix "<docs-path>/"
+rm -rf /tmp/<lib>-docs
 ```
+
+## Using Presets
+
+For popular libraries, use the preset for correct repo/path/URL:
+
+```bash
+python3 ./presets.py show react   # Show preset config
+
+# Then use the preset values:
+cd /tmp && rm -rf react-docs
+git clone --depth 1 --filter=blob:none --sparse https://github.com/reactjs/react.dev react-docs
+cd react-docs && git sparse-checkout set src/content
+find src/content -type f \( -name "*.md" -o -name "*.mdx" \) | \
+  python3 ./index.py react --batch --base-url "https://react.dev" --strip-prefix "src/content/"
+rm -rf /tmp/react-docs
+```
+
+Available presets: react, nextjs, vue, svelte, nuxt, angular, astro, remix, tailwind, shadcn, express, fastapi, django, flask, hono, nestjs, rails, laravel, bun, node, deno, typescript, python, rust, go, prisma, drizzle, supabase, redux, zustand, tanstack-query, vitest, playwright, jest, pytest, vite, langchain, openai, anthropic, docker, kubernetes, and more.
+
+## Troubleshooting
+
+- **0 docs indexed**: check docs path exists after sparse checkout
+- **No .md files**: try `.mdx`, `.rst`, or check actual extension
+- **Wrong URLs**: check live docs site structure
+- **Re-indexing**: just run again, documents are upserted by path
+- **Large doc chunking**: files >8KB auto-split by ## headings; use --no-chunk to disable

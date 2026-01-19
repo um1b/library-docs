@@ -1,4 +1,3 @@
 .claude
-
-library-doc/data
-library-doc/data/*
+data/
+test/

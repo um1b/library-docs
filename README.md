@@ -9,6 +9,8 @@ Index and search library documentation locally for fast, offline access in Claud
 - **Version support** - index multiple versions of the same library (e.g., `nextjs`, `nextjs-15`)
 - **Sparse checkout** - only downloads docs files, not entire repos
 - **URL linking** - preserved links to original documentation
+- **59 library presets** - pre-configured repos/paths for popular libraries
+- **Auto-chunking** - large docs split by headings for better search
 
 ## Installation
 
@@ -34,6 +36,27 @@ Use the `/library-doc` skill in Claude Code:
 
 Or just ask naturally: "index the React docs", "search for authentication in nextjs".
 
+## Presets
+
+59 popular libraries have pre-configured repo URLs and doc paths:
+
+```bash
+python3 presets.py list           # Show all presets
+python3 presets.py show nextjs    # Show preset details
+```
+
+**Frontend**: react, nextjs, vue, svelte, nuxt, angular, astro, remix, solid
+**CSS/UI**: tailwind, shadcn
+**Backend**: express, fastapi, django, flask, hono, nestjs, rails, laravel
+**Runtimes**: bun, node, deno
+**Languages**: typescript, python, rust, go
+**Databases**: prisma, drizzle, supabase, mongodb, sqlalchemy
+**State**: redux, zustand, tanstack-query, jotai
+**Testing**: vitest, playwright, jest, pytest, cypress
+**Build**: vite, esbuild, webpack, turbo
+**AI/ML**: langchain, openai, anthropic, huggingface
+**DevOps**: docker, kubernetes, terraform
+
 ## Commands
 
 | Command | Description |
@@ -44,16 +67,19 @@ Or just ask naturally: "index the React docs", "search for authentication in nex
 | `python3 search.py "<query>"` | Search all libraries |
 | `python3 search.py "<query>" --library <name>` | Search specific library |
 | `python3 read.py <library> <id\|path\|title>` | Read full document |
+| `python3 presets.py list` | List all presets |
+| `python3 presets.py show <name>` | Show preset details |
 
 ## Architecture
 
 ```
 library-docs/
 ├── db.py        # SQLite + FTS5 database layer
-├── index.py     # Batch/single file indexer
+├── index.py     # Batch/single file indexer (with auto-chunking)
 ├── search.py    # Full-text search CLI
 ├── list.py      # List libraries/documents
 ├── read.py      # Read full document content
+├── presets.py   # 59 library presets (repos, paths, URLs)
 ├── SKILL.md     # Claude Code skill definition
 └── data/
     └── library.db   # SQLite database (created on first use)

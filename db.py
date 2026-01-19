@@ -2,6 +2,7 @@
 import re
 import sqlite3
 from pathlib import Path
+from typing import Optional
 
 DB_PATH = Path(__file__).parent / "data" / "library.db"
 
@@ -199,6 +200,52 @@ def list_documents(conn: sqlite3.Connection, library_name: str) -> list:
         WHERE l.name = ?
         ORDER BY d.path
     """, (library_name,)).fetchall()
+
+
+def get_document(
+    conn: sqlite3.Connection,
+    library_name: str,
+    identifier: str
+) -> Optional[dict]:
+    """Get full document content by ID, path, or title (exact match).
+
+    Matching order:
+    1. If identifier is numeric → match by document ID
+    2. Else → exact match on path
+    3. Else → exact match on title (case-insensitive)
+    """
+    # Try by ID first if numeric
+    if identifier.isdigit():
+        row = conn.execute("""
+            SELECT d.id, d.path, d.title, d.url, d.content, l.name as library
+            FROM documents d
+            JOIN libraries l ON d.library_id = l.id
+            WHERE d.id = ? AND l.name = ?
+        """, (int(identifier), library_name)).fetchone()
+        if row:
+            return dict(row)
+
+    # Try exact path match
+    row = conn.execute("""
+        SELECT d.id, d.path, d.title, d.url, d.content, l.name as library
+        FROM documents d
+        JOIN libraries l ON d.library_id = l.id
+        WHERE d.path = ? AND l.name = ?
+    """, (identifier, library_name)).fetchone()
+    if row:
+        return dict(row)
+
+    # Try exact title match (case-insensitive)
+    row = conn.execute("""
+        SELECT d.id, d.path, d.title, d.url, d.content, l.name as library
+        FROM documents d
+        JOIN libraries l ON d.library_id = l.id
+        WHERE LOWER(d.title) = LOWER(?) AND l.name = ?
+    """, (identifier, library_name)).fetchone()
+    if row:
+        return dict(row)
+
+    return None
 
 
 def delete_library(conn: sqlite3.Connection, name: str) -> bool:
