@@ -12,6 +12,11 @@ Index and search library documentation locally for fast, offline access in Claud
 - **59 library presets** - pre-configured repos/paths for popular libraries
 - **Auto-chunking** - large docs split by headings for better search
 
+## Requirements
+
+- Python 3.9+
+- No external dependencies (stdlib only)
+
 ## Installation
 
 ```bash
