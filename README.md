@@ -1,11 +1,19 @@
 # Library Documentation Indexer
 
-A local documentation indexer for Claude Code that allows you to index and search library docs offline.
+Index and search library documentation locally for fast, offline access in Claude Code.
+
+## Features
+
+- **Full-text search** with FTS5 (title boosting, prefix matching, multi-word queries)
+- **Offline access** to indexed docs - no network latency
+- **Version support** - index multiple versions of the same library (e.g., `nextjs`, `nextjs-15`)
+- **Sparse checkout** - only downloads docs files, not entire repos
+- **URL linking** - preserved links to original documentation
 
 ## Installation
 
 ```bash
-git clone https://github.com/um1b/library-docs.git ~/.claude/skills/library-docs
+git clone https://github.com/anthropics/library-docs.git ~/.claude/skills/library-docs
 ```
 
 ## Update
@@ -18,12 +26,71 @@ git -C ~/.claude/skills/library-docs pull
 
 Use the `/library-doc` skill in Claude Code:
 
-- `/library-doc list` - List indexed libraries
-- `/library-doc search <query>` - Search indexed docs
-- `/library-doc index <library>` - Index a library's documentation
+```
+/library-doc index bun          # Index Bun documentation
+/library-doc search "FFI"       # Search all libraries
+/library-doc list               # List indexed libraries
+```
+
+Or just ask naturally: "index the React docs", "search for authentication in nextjs".
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `python3 list.py` | List all indexed libraries |
+| `python3 list.py <library>` | List documents in a library |
+| `python3 list.py --delete <name>` | Delete a library |
+| `python3 search.py "<query>"` | Search all libraries |
+| `python3 search.py "<query>" --library <name>` | Search specific library |
+| `python3 read.py <library> <id\|path\|title>` | Read full document |
+
+## Architecture
+
+```
+library-docs/
+├── db.py        # SQLite + FTS5 database layer
+├── index.py     # Batch/single file indexer
+├── search.py    # Full-text search CLI
+├── list.py      # List libraries/documents
+├── read.py      # Read full document content
+├── SKILL.md     # Claude Code skill definition
+└── data/
+    └── library.db   # SQLite database (created on first use)
+```
+
+## How It Works
+
+1. **Indexing**: Clones docs from GitHub using sparse checkout (docs folder only), extracts titles from markdown frontmatter/headings, stores content in SQLite with FTS5 indexing
+2. **Searching**: Uses BM25 ranking with title boosting (10x weight), supports prefix matching (`auth*`) and multi-word OR queries
+3. **Reading**: Retrieves full document by ID, path, or exact title match
+
+## Example Workflow
+
+```bash
+# 1. Index a library
+/library-doc index bun
+
+# 2. Search for a topic
+python3 search.py "websocket" --library bun
+# Returns: title, URL, snippet with highlighted matches
+
+# 3. Read the full document
+python3 read.py bun "WebSockets"
+# Returns: complete markdown content
+
+# 4. Read specific lines (for long docs)
+python3 read.py bun "WebSockets" --lines 1-100
+```
 
 ## CLAUDE.md Configuration
 
-Add the following to your `~/.claude/CLAUDE.md` to have Claude Code automatically search indexed documentation when building applications:
+Add to `~/.claude/CLAUDE.md` for automatic doc lookups:
 
-> When generating code for a library, first use the library-doc skill to check if documentation is indexed and search it before writing code. This ensures code follows current APIs and best practices.
+```
+When working with a library (writing code, configuring, integrating, or troubleshooting), use the library-doc skill to search indexed documentation first. This helps you:
+- Use current APIs instead of outdated patterns
+- Find correct configuration options and defaults
+- Understand library-specific conventions and best practices
+- Debug errors by checking if behavior matches documented expectations
+```
