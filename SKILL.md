@@ -91,15 +91,18 @@ Determine:
 - `nextjs-15` - specific major version
 - `python-3.12` - specific minor version (when relevant)
 
+**IMPORTANT:** Always use `--sparse` with `git sparse-checkout set` to only download docs files (`.md`, `.mdx`), not the entire repo.
+
 ```bash
 cd /tmp && rm -rf <lib>-docs
 
-# For latest version:
+# For latest version (MUST use --sparse):
 git clone --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
 
-# For specific version (use --branch with tag):
+# For specific version (MUST use --sparse):
 git clone --branch <tag> --depth 1 --filter=blob:none --sparse <repo-url> <lib>-docs
 
+# REQUIRED: Set sparse-checkout to only fetch docs folder
 cd <lib>-docs && git sparse-checkout set <docs-path>
 
 # Check if docs exist before indexing
