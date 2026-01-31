@@ -19,7 +19,7 @@ Index and search library documentation locally for fast, offline access in Claud
 ## Installation
 
 ```bash
-git clone https://github.com/anthropics/library-docs.git ~/.claude/skills/library-docs
+git clone https://github.com/um1b/library-docs.git ~/.claude/skills/library-docs
 ```
 
 ## Update
